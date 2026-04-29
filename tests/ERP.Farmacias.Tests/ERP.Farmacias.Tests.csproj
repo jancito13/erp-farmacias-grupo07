@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ERP.Farmacias.Application\ERP.Farmacias.Application.csproj" />
+    <ProjectReference Include="..\..\src\ERP.Farmacias.Infrastructure\ERP.Farmacias.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
