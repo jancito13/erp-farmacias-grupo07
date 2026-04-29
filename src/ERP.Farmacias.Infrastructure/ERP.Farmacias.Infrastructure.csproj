@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ERP.Farmacias.Application\ERP.Farmacias.Application.csproj" />
+    <ProjectReference Include="..\ERP.Farmacias.Domain\ERP.Farmacias.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
