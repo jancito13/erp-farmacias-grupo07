@@ -1,11 +1,11 @@
 using ERP.Farmacias.Domain.Entities.Security;
-using Microsoft.AspNetCore.Identity;
+using ERP.Farmacias.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.Farmacias.Infrastructure.Data;
 
-public class AppDbContext : IdentityDbContext<IdentityUser>
+public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

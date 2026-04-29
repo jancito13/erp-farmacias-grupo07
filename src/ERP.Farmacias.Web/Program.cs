@@ -1,4 +1,5 @@
 using ERP.Farmacias.Infrastructure.Data;
+using ERP.Farmacias.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -22,7 +23,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ));
 
 // ── ASP.NET Identity ──────────────────────────────────────────────
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
