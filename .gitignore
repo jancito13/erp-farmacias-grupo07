@@ -1,0 +1,27 @@
+# Build
+bin/
+obj/
+
+# Visual Studio / IDEs
+.vs/
+*.user
+*.suo
+*.userosscache
+.idea/
+
+# Configuración local con credenciales
+appsettings.Development.json
+**/appsettings.*.json
+!appsettings.json
+
+# Logs
+logs/
+*.log
+
+# NuGet
+*.nupkg
+.nuget/
+
+# OS
+.DS_Store
+Thumbs.db

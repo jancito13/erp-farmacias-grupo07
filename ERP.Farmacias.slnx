@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ERP.Farmacias.Application/ERP.Farmacias.Application.csproj" />
+    <Project Path="src/ERP.Farmacias.Domain/ERP.Farmacias.Domain.csproj" />
+    <Project Path="src/ERP.Farmacias.Infrastructure/ERP.Farmacias.Infrastructure.csproj" />
+    <Project Path="src/ERP.Farmacias.Web/ERP.Farmacias.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ERP.Farmacias.Tests/ERP.Farmacias.Tests.csproj" />
+  </Folder>
+</Solution>
