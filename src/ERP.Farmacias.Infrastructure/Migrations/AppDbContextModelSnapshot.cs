@@ -23,50 +23,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ERP.Farmacias.Domain.Entities.Security.AuditLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Details")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
-                    b.Property<string>("Module")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Timestamp");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AuditLogs", "security");
-                });
-
-            modelBuilder.Entity("ERP.Farmacias.Infrastructure.Identity.ApplicationRole", b =>
+            modelBuilder.Entity("ERP.Farmacias.Domain.Entities.Security.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -97,7 +54,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
                     b.ToTable("Roles", "security");
                 });
 
-            modelBuilder.Entity("ERP.Farmacias.Infrastructure.Identity.ApplicationUser", b =>
+            modelBuilder.Entity("ERP.Farmacias.Domain.Entities.Security.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -109,8 +66,8 @@ namespace ERP.Farmacias.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -170,6 +127,49 @@ namespace ERP.Farmacias.Infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("Users", "security");
+                });
+
+            modelBuilder.Entity("ERP.Farmacias.Domain.Entities.Security.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLogs", "security");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -280,7 +280,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -289,7 +289,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -298,7 +298,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -307,13 +307,13 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -322,7 +322,7 @@ namespace ERP.Farmacias.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("ERP.Farmacias.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("ERP.Farmacias.Domain.Entities.Security.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

@@ -1,4 +1,4 @@
-using ERP.Farmacias.Infrastructure.Identity;
+using ERP.Farmacias.Domain.Entities.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 

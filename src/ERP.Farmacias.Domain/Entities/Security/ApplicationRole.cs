@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace ERP.Farmacias.Infrastructure.Identity;
+namespace ERP.Farmacias.Domain.Entities.Security;
 
 public class ApplicationRole : IdentityRole
 {

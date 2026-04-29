@@ -1,5 +1,5 @@
+using ERP.Farmacias.Domain.Entities.Security;
 using ERP.Farmacias.Infrastructure.Data;
-using ERP.Farmacias.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
