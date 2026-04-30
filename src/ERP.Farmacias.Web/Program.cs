@@ -54,6 +54,7 @@ builder.Services.AddMudServices();
 // ── Blazor Server ─────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
 // ── Servicios de Application (registrar aquí por módulo) ──────────
@@ -78,6 +79,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+app.MapRazorPages();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

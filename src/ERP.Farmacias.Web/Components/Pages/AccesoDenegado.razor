@@ -1,0 +1,17 @@
+@page "/acceso-denegado"
+
+<PageTitle>Acceso denegado</PageTitle>
+
+<MudPaper Class="pa-8 ma-4" Elevation="2" Style="max-width:480px;margin:auto;margin-top:4rem;">
+    <MudStack AlignItems="AlignItems.Center" Spacing="4">
+        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Style="font-size:4rem;" />
+        <MudText Typo="Typo.h5" Color="Color.Error">Acceso denegado</MudText>
+        <MudText Typo="Typo.body1" Align="Align.Center">
+            No tienes permisos para acceder a esta página.
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   Href="/" StartIcon="@Icons.Material.Filled.Home">
+            Volver al inicio
+        </MudButton>
+    </MudStack>
+</MudPaper>
