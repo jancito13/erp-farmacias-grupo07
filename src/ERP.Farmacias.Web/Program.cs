@@ -1,3 +1,5 @@
+using ERP.Farmacias.Application.Interfaces.Services.Security;
+using ERP.Farmacias.Application.Services.Security;
 using ERP.Farmacias.Domain.Entities.Security;
 using ERP.Farmacias.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -55,7 +57,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor();
 
 // ── Servicios de Application (registrar aquí por módulo) ──────────
-// builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 // builder.Services.AddScoped<IAuditService, AuditService>();
 
 var app = builder.Build();
