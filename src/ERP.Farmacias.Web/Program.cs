@@ -47,6 +47,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/acceso-denegado";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
 // ── Políticas de autorización por rol ─────────────────────────────
