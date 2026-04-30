@@ -42,14 +42,33 @@
             color: #c62828; padding: .6rem .8rem;
             border-radius: 4px; font-size: .85rem; margin-bottom: 1rem;
         }
-        button[type=submit] {
+        .btn-submit {
             width: 100%; padding: .75rem;
             background: #1976d2; color: #fff;
             border: none; border-radius: 4px;
             font-size: 1rem; font-weight: 500;
             cursor: pointer; transition: background .2s;
+            display: flex; align-items: center; justify-content: center; gap: .5rem;
+            min-height: 44px;
         }
-        button[type=submit]:hover { background: #1565c0; }
+        .btn-submit:hover:not(:disabled) { background: #1565c0; }
+        .btn-submit:disabled { background: #90caf9; cursor: not-allowed; }
+
+        /* MudProgressCircular equivalent */
+        .mud-circular {
+            display: none;
+            width: 20px; height: 20px;
+            border: 2.5px solid rgba(255,255,255,.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: mud-spin .7s linear infinite;
+        }
+        .loading .mud-circular { display: inline-block; }
+        .loading .btn-text { display: none; }
+
+        @@keyframes mud-spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -62,7 +81,7 @@
             <div class="error">@Model.ErrorMessage</div>
         }
 
-        <form method="post">
+        <form method="post" id="loginForm">
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label for="email">Correo electrónico</label>
@@ -72,8 +91,19 @@
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" name="Password" required />
             </div>
-            <button type="submit">Iniciar sesión</button>
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span class="mud-circular"></span>
+                <span class="btn-text">Iniciar sesión</span>
+            </button>
         </form>
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function () {
+            var btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.classList.add('loading');
+        });
+    </script>
 </body>
 </html>

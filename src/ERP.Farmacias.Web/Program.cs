@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
 using ERP.Farmacias.Web.Components;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +49,25 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
+// ── Políticas de autorización por rol ─────────────────────────────
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdministrador",
+        p => p.RequireRole("Administrador"));
+    options.AddPolicy("RequireCajero",
+        p => p.RequireRole("Cajero", "Administrador", "Gerente"));
+    options.AddPolicy("RequireContabilidad",
+        p => p.RequireRole("Contador", "Administrador", "Gerente"));
+    options.AddPolicy("RequireAlmacen",
+        p => p.RequireRole("Almacenero", "Administrador", "Gerente"));
+    options.AddPolicy("RequireCompras",
+        p => p.RequireRole("JefeCompras", "Administrador", "Gerente"));
+    options.AddPolicy("RequireRRHH",
+        p => p.RequireRole("RRHH", "Administrador", "Gerente"));
+    options.AddPolicy("RequireGerencia",
+        p => p.RequireRole("Gerente", "Administrador"));
+});
+
 // ── MudBlazor ─────────────────────────────────────────────────────
 builder.Services.AddMudServices();
 
@@ -59,6 +79,7 @@ builder.Services.AddHttpContextAccessor();
 
 // ── Servicios de Application (registrar aquí por módulo) ──────────
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 // builder.Services.AddScoped<IAuditService, AuditService>();
 
 var app = builder.Build();

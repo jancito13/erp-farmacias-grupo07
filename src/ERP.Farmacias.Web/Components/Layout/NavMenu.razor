@@ -1,36 +1,103 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">ERP.Farmacias.Web</a>
-    </div>
-</div>
+<AuthorizeView>
+    <Authorized>
+        <MudNavMenu>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+            @* Dashboard: visible para todos los roles *@
+            <MudNavLink Href="/"
+                        Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Dashboard">
+                Dashboard
+            </MudNavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+            @* Administración: solo Administrador *@
+            <AuthorizeView Roles="Administrador" Context="_adminCtx">
+                <Authorized>
+                    <MudNavGroup Title="Administración"
+                                 Icon="@Icons.Material.Filled.AdminPanelSettings"
+                                 Expanded="true">
+                        <MudNavLink Href="/usuarios"
+                                    Icon="@Icons.Material.Filled.People">
+                            Usuarios
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+            @* Caja & Ventas: Cajero, Administrador, Gerente *@
+            <AuthorizeView Roles="Cajero,Administrador,Gerente" Context="_cajaCtx">
+                <Authorized>
+                    <MudNavGroup Title="Caja &amp; Ventas"
+                                 Icon="@Icons.Material.Filled.PointOfSale"
+                                 Expanded="false">
+                        <MudNavLink Href="/caja"
+                                    Icon="@Icons.Material.Filled.ShoppingCart">
+                            Punto de venta
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+            @* Inventario: Almacenero, Administrador, Gerente *@
+            <AuthorizeView Roles="Almacenero,Administrador,Gerente" Context="_almacenCtx">
+                <Authorized>
+                    <MudNavGroup Title="Inventario"
+                                 Icon="@Icons.Material.Filled.Inventory"
+                                 Expanded="false">
+                        <MudNavLink Href="/inventario"
+                                    Icon="@Icons.Material.Filled.Storage">
+                            Productos
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="usuarios">
-                <span class="bi bi-people-fill" aria-hidden="true"></span> Usuarios
-            </NavLink>
-        </div>
-    </nav>
-</div>
+            @* Compras: JefeCompras, Administrador, Gerente *@
+            <AuthorizeView Roles="JefeCompras,Administrador,Gerente" Context="_comprasCtx">
+                <Authorized>
+                    <MudNavGroup Title="Compras"
+                                 Icon="@Icons.Material.Filled.ShoppingBag"
+                                 Expanded="false">
+                        <MudNavLink Href="/compras"
+                                    Icon="@Icons.Material.Filled.AddShoppingCart">
+                            Órdenes de compra
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
 
+            @* Contabilidad: Contador, Administrador, Gerente — NO Cajero *@
+            <AuthorizeView Roles="Contador,Administrador,Gerente" Context="_contCtx">
+                <Authorized>
+                    <MudNavGroup Title="Contabilidad"
+                                 Icon="@Icons.Material.Filled.AccountBalance"
+                                 Expanded="false">
+                        <MudNavLink Href="/contabilidad"
+                                    Icon="@Icons.Material.Filled.ReceiptLong">
+                            Reportes financieros
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
+
+            @* RRHH: RRHH, Administrador, Gerente *@
+            <AuthorizeView Roles="RRHH,Administrador,Gerente" Context="_rrhhCtx">
+                <Authorized>
+                    <MudNavGroup Title="RRHH"
+                                 Icon="@Icons.Material.Filled.Badge"
+                                 Expanded="false">
+                        <MudNavLink Href="/rrhh"
+                                    Icon="@Icons.Material.Filled.Group">
+                            Personal
+                        </MudNavLink>
+                    </MudNavGroup>
+                </Authorized>
+            </AuthorizeView>
+
+        </MudNavMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudText Class="pa-4" Typo="Typo.body2">
+            Inicia sesión para ver el menú.
+        </MudText>
+    </NotAuthorized>
+</AuthorizeView>
