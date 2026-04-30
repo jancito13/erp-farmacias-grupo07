@@ -1,6 +1,7 @@
 using ERP.Farmacias.Application.DTOs.Security;
 using ERP.Farmacias.Application.Interfaces.Services.Security;
 using ERP.Farmacias.Domain.Entities.Security;
+using ERP.Farmacias.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
@@ -9,8 +10,12 @@ namespace ERP.Farmacias.Application.Services.Security;
 public class AuthService(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
-    IHttpContextAccessor httpContextAccessor) : IAuthService
+    IHttpContextAccessor httpContextAccessor,
+    IAuditoriaService auditoriaService) : IAuthService
 {
+    private string ObtenerIp() =>
+        httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
     public async Task<AuthResultDto> LoginAsync(LoginDto dto)
     {
         var result = await signInManager.PasswordSignInAsync(
@@ -33,9 +38,21 @@ public class AuthService(
                     IsActive = user.IsActive,
                     CreatedAt = user.CreatedAt
                 };
+
+                await auditoriaService.RegistrarAsync(
+                    user.Id, user.Email!, ActionType.Login, "Seguridad",
+                    "Inicio de sesión exitoso", ObtenerIp());
             }
 
             return new AuthResultDto { Succeeded = true, User = userDto };
+        }
+
+        var failedUser = await userManager.FindByEmailAsync(dto.Email);
+        if (failedUser is not null)
+        {
+            await auditoriaService.RegistrarAsync(
+                failedUser.Id, failedUser.Email!, ActionType.LoginFailed, "Seguridad",
+                result.IsLockedOut ? "Cuenta bloqueada" : "Contraseña incorrecta", ObtenerIp());
         }
 
         return new AuthResultDto
@@ -50,7 +67,15 @@ public class AuthService(
 
     public async Task LogoutAsync()
     {
+        var user = await GetCurrentUserAsync();
         await signInManager.SignOutAsync();
+
+        if (user is not null)
+        {
+            await auditoriaService.RegistrarAsync(
+                user.Id, user.Email, ActionType.Logout, "Seguridad",
+                "Cierre de sesión", ObtenerIp());
+        }
     }
 
     public async Task<UsuarioResponseDto?> GetCurrentUserAsync()

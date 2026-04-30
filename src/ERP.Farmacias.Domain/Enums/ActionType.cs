@@ -9,4 +9,8 @@ public enum ActionType
     UserUpdated,
     UserDeactivated,
     RoleAssigned,
+    Crear,
+    Editar,
+    Eliminar,
+    VerReporte,
 }

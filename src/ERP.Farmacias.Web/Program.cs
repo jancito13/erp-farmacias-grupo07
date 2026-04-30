@@ -2,6 +2,7 @@ using ERP.Farmacias.Application.Interfaces.Services.Security;
 using ERP.Farmacias.Application.Services.Security;
 using ERP.Farmacias.Domain.Entities.Security;
 using ERP.Farmacias.Infrastructure.Data;
+using ERP.Farmacias.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -91,9 +92,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
 // ── Servicios de Application (registrar aquí por módulo) ──────────
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-// builder.Services.AddScoped<IAuditService, AuditService>();
 
 var app = builder.Build();
 
