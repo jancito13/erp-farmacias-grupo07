@@ -1,5 +1,8 @@
 @page "/usuarios"
 @rendermode InteractiveServer
+@attribute [Authorize(Roles = "Administrador")]
+
+@using Microsoft.AspNetCore.Authorization
 
 @inject IUsuarioService UsuarioService
 @inject RoleManager<ApplicationRole> RoleManager
@@ -7,106 +10,128 @@
 
 <PageTitle>Usuarios</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Gestión de Usuarios</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.PersonAdd"
-               OnClick="AbrirNuevoUsuario">
-        Nuevo usuario
-    </MudButton>
-</MudStack>
+<AuthorizeView Roles="Administrador">
+    <Authorized>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+            <MudText Typo="Typo.h5">Gestión de Usuarios</MudText>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="AbrirNuevoUsuario">
+                Nuevo usuario
+            </MudButton>
+        </MudStack>
 
-<MudDataGrid T="UsuarioResponseDto" Items="_usuarios"
-             Filterable="true" SortMode="SortMode.Multiple"
-             Striped="true" Hover="true" Bordered="true">
-    <Columns>
-        <PropertyColumn Property="u => u.FullName" Title="Nombre completo" />
-        <PropertyColumn Property="u => u.Email" Title="Email" />
-        <PropertyColumn Property="u => u.RoleName" Title="Rol" />
-        <TemplateColumn Title="Estado" Sortable="false" Filterable="false">
-            <CellTemplate>
-                <MudChip T="string"
-                         Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
-                         Size="Size.Small"
-                         Variant="Variant.Filled">
-                    @(context.Item.IsActive ? "Activo" : "Inactivo")
-                </MudChip>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn Title="Acciones" Sortable="false" Filterable="false">
-            <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                               Color="Color.Info"
-                               Size="Size.Small"
-                               Title="Editar"
-                               OnClick="@(() => AbrirEditar(context.Item))" />
-                <MudIconButton
-                    Icon="@(context.Item.IsActive ? Icons.Material.Filled.PersonOff : Icons.Material.Filled.PersonAdd)"
-                    Color="@(context.Item.IsActive ? Color.Warning : Color.Success)"
-                    Size="Size.Small"
-                    Title="@(context.Item.IsActive ? "Desactivar" : "Activar")"
-                    OnClick="@(() => ConfirmarToggle(context.Item))" />
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-</MudDataGrid>
+        <MudDataGrid T="UsuarioResponseDto" Items="_usuarios"
+                     Filterable="true" SortMode="SortMode.Multiple"
+                     Striped="true" Hover="true" Bordered="true">
+            <Columns>
+                <PropertyColumn Property="u => u.FullName" Title="Nombre completo" />
+                <PropertyColumn Property="u => u.Email" Title="Email" />
+                <PropertyColumn Property="u => u.RoleName" Title="Rol" />
+                <TemplateColumn Title="Estado" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudChip T="string"
+                                 Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                                 Size="Size.Small"
+                                 Variant="Variant.Filled">
+                            @(context.Item.IsActive ? "Activo" : "Inactivo")
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Acciones" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Color="Color.Info"
+                                       Size="Size.Small"
+                                       Title="Editar"
+                                       OnClick="@(() => AbrirEditar(context.Item))" />
+                        <MudIconButton
+                            Icon="@(context.Item.IsActive ? Icons.Material.Filled.PersonOff : Icons.Material.Filled.PersonAdd)"
+                            Color="@(context.Item.IsActive ? Color.Warning : Color.Success)"
+                            Size="Size.Small"
+                            Title="@(context.Item.IsActive ? "Desactivar" : "Activar")"
+                            OnClick="@(() => ConfirmarToggle(context.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
 
-<MudDialog @bind-IsVisible="_dialogVisible" Options="_dialogOptions">
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            @(_editandoId is null ? "Nuevo usuario" : "Editar usuario")
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudTextField @bind-Value="_form.FullName"
-                      Label="Nombre completo"
-                      Variant="Variant.Outlined"
-                      Class="mb-3"
-                      Required="true" />
-        <MudTextField @bind-Value="_form.Email"
-                      Label="Email"
-                      Variant="Variant.Outlined"
-                      Class="mb-3"
-                      InputType="InputType.Email"
-                      Required="true" />
-        <MudTextField @bind-Value="_form.Password"
-                      Label="Contraseña"
-                      Variant="Variant.Outlined"
-                      Class="mb-3"
-                      InputType="InputType.Password"
-                      Required="@(_editandoId is null)"
-                      HelperText="@(_editandoId is not null ? "Dejar vacío para no cambiar" : null)" />
-        <MudSelect T="string" @bind-Value="_form.RoleName"
-                   Label="Rol"
-                   Variant="Variant.Outlined"
-                   Required="true">
-            @foreach (var rol in _roles)
-            {
-                <MudSelectItem T="string" Value="@rol">@rol</MudSelectItem>
-            }
-        </MudSelect>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CerrarDialog" Disabled="_guardando">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   OnClick="Guardar"
-                   Disabled="_guardando">
-            @(_guardando ? "Guardando..." : "Guardar")
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+        <MudDialog @bind-IsVisible="_dialogVisible" Options="_dialogOptions">
+            <TitleContent>
+                <MudText Typo="Typo.h6">
+                    @(_editandoId is null ? "Nuevo usuario" : "Editar usuario")
+                </MudText>
+            </TitleContent>
+            <DialogContent>
+                <MudTextField @bind-Value="_form.FullName"
+                              Label="Nombre completo"
+                              Variant="Variant.Outlined"
+                              Class="mb-3"
+                              Required="true" />
+                <MudTextField @bind-Value="_form.Email"
+                              Label="Email"
+                              Variant="Variant.Outlined"
+                              Class="mb-3"
+                              InputType="InputType.Email"
+                              Required="true" />
+                <MudTextField @bind-Value="_form.Password"
+                              Label="Contraseña"
+                              Variant="Variant.Outlined"
+                              Class="mb-3"
+                              InputType="InputType.Password"
+                              Required="@(_editandoId is null)"
+                              HelperText="@(_editandoId is not null ? "Dejar vacío para no cambiar" : null)" />
+                <MudSelect T="string" @bind-Value="_form.RoleName"
+                           Label="Rol"
+                           Variant="Variant.Outlined"
+                           Required="true">
+                    @foreach (var rol in _roles)
+                    {
+                        <MudSelectItem T="string" Value="@rol">@rol</MudSelectItem>
+                    }
+                </MudSelect>
+            </DialogContent>
+            <DialogActions>
+                <MudButton OnClick="CerrarDialog" Disabled="_guardando">Cancelar</MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="Guardar"
+                           Disabled="_guardando">
+                    @(_guardando ? "Guardando..." : "Guardar")
+                </MudButton>
+            </DialogActions>
+        </MudDialog>
 
-<MudMessageBox @ref="_msgBox"
-               Title="Confirmar acción"
-               CancelText="Cancelar"
-               YesText="Confirmar">
-    <MessageContent>
-        ¿Confirmas cambiar el estado de este usuario?
-    </MessageContent>
-</MudMessageBox>
+        <MudMessageBox @ref="_msgBox"
+                       Title="Confirmar acción"
+                       CancelText="Cancelar"
+                       YesText="Confirmar">
+            <MessageContent>
+                ¿Confirmas cambiar el estado de este usuario?
+            </MessageContent>
+        </MudMessageBox>
+    </Authorized>
+    <NotAuthorized>
+        <MudPaper Class="pa-8 ma-4" Elevation="2">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Style="font-size: 4rem;" />
+                <MudText Typo="Typo.h5" Color="Color.Error">Acceso denegado</MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center">
+                    No tienes permisos para acceder a esta sección.
+                    Solo los usuarios con el rol <strong>Administrador</strong> pueden gestionar usuarios.
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Href="/"
+                           StartIcon="@Icons.Material.Filled.Home">
+                    Volver al inicio
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private List<UsuarioResponseDto> _usuarios = [];
