@@ -39,6 +39,13 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// ── Antiforgery Cookie ────────────────────────────────────────────
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
 // ── Autenticación por Cookie ──────────────────────────────────────
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -95,9 +102,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 if (!app.Environment.IsDevelopment())
+{
     app.UseExceptionHandler("/Error");
-
-app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
