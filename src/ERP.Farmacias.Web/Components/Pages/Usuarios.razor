@@ -1,0 +1,221 @@
+@page "/usuarios"
+@rendermode InteractiveServer
+
+@inject IUsuarioService UsuarioService
+@inject RoleManager<ApplicationRole> RoleManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Usuarios</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Gestión de Usuarios</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="AbrirNuevoUsuario">
+        Nuevo usuario
+    </MudButton>
+</MudStack>
+
+<MudDataGrid T="UsuarioResponseDto" Items="_usuarios"
+             Filterable="true" SortMode="SortMode.Multiple"
+             Striped="true" Hover="true" Bordered="true">
+    <Columns>
+        <PropertyColumn Property="u => u.FullName" Title="Nombre completo" />
+        <PropertyColumn Property="u => u.Email" Title="Email" />
+        <PropertyColumn Property="u => u.RoleName" Title="Rol" />
+        <TemplateColumn Title="Estado" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudChip T="string"
+                         Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                         Size="Size.Small"
+                         Variant="Variant.Filled">
+                    @(context.Item.IsActive ? "Activo" : "Inactivo")
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Acciones" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               Title="Editar"
+                               OnClick="@(() => AbrirEditar(context.Item))" />
+                <MudIconButton
+                    Icon="@(context.Item.IsActive ? Icons.Material.Filled.PersonOff : Icons.Material.Filled.PersonAdd)"
+                    Color="@(context.Item.IsActive ? Color.Warning : Color.Success)"
+                    Size="Size.Small"
+                    Title="@(context.Item.IsActive ? "Desactivar" : "Activar")"
+                    OnClick="@(() => ConfirmarToggle(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+<MudDialog @bind-IsVisible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(_editandoId is null ? "Nuevo usuario" : "Editar usuario")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_form.FullName"
+                      Label="Nombre completo"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      Required="true" />
+        <MudTextField @bind-Value="_form.Email"
+                      Label="Email"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      InputType="InputType.Email"
+                      Required="true" />
+        <MudTextField @bind-Value="_form.Password"
+                      Label="Contraseña"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      InputType="InputType.Password"
+                      Required="@(_editandoId is null)"
+                      HelperText="@(_editandoId is not null ? "Dejar vacío para no cambiar" : null)" />
+        <MudSelect T="string" @bind-Value="_form.RoleName"
+                   Label="Rol"
+                   Variant="Variant.Outlined"
+                   Required="true">
+            @foreach (var rol in _roles)
+            {
+                <MudSelectItem T="string" Value="@rol">@rol</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CerrarDialog" Disabled="_guardando">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Guardar"
+                   Disabled="_guardando">
+            @(_guardando ? "Guardando..." : "Guardar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudMessageBox @ref="_msgBox"
+               Title="Confirmar acción"
+               CancelText="Cancelar"
+               YesText="Confirmar">
+    <MessageContent>
+        ¿Confirmas cambiar el estado de este usuario?
+    </MessageContent>
+</MudMessageBox>
+
+@code {
+    private List<UsuarioResponseDto> _usuarios = [];
+    private List<string> _roles = [];
+
+    private bool _dialogVisible;
+    private bool _guardando;
+    private string? _editandoId;
+    private CrearUsuarioDto _form = new();
+    private MudMessageBox _msgBox = default!;
+
+    private readonly DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseOnEscapeKey = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuarios();
+        _roles = RoleManager.Roles.Select(r => r.Name!).OrderBy(r => r).ToList();
+    }
+
+    private async Task CargarUsuarios()
+    {
+        _usuarios = await UsuarioService.GetAllAsync();
+    }
+
+    private void AbrirNuevoUsuario()
+    {
+        _editandoId = null;
+        _form = new CrearUsuarioDto();
+        _dialogVisible = true;
+    }
+
+    private void AbrirEditar(UsuarioResponseDto usuario)
+    {
+        _editandoId = usuario.Id;
+        _form = new CrearUsuarioDto
+        {
+            FullName = usuario.FullName,
+            Email = usuario.Email,
+            RoleName = usuario.RoleName,
+            Password = string.Empty
+        };
+        _dialogVisible = true;
+    }
+
+    private void CerrarDialog() => _dialogVisible = false;
+
+    private async Task Guardar()
+    {
+        _guardando = true;
+        try
+        {
+            bool ok;
+            if (_editandoId is not null)
+            {
+                ok = await UsuarioService.UpdateAsync(_editandoId, _form);
+                if (ok && !string.IsNullOrWhiteSpace(_form.RoleName))
+                    await UsuarioService.AssignRoleAsync(new AsignarRolDto
+                    {
+                        UserId = _editandoId,
+                        RoleName = _form.RoleName
+                    });
+            }
+            else
+            {
+                ok = await UsuarioService.CreateAsync(_form);
+            }
+
+            if (ok)
+            {
+                Snackbar.Add(
+                    _editandoId is not null ? "Usuario actualizado." : "Usuario creado.",
+                    Severity.Success);
+                _dialogVisible = false;
+                await CargarUsuarios();
+            }
+            else
+            {
+                Snackbar.Add("No se pudo guardar el usuario.", Severity.Error);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+
+    private async Task ConfirmarToggle(UsuarioResponseDto usuario)
+    {
+        bool? resultado = await _msgBox.ShowAsync();
+        if (resultado is not true) return;
+
+        bool ok = await UsuarioService.ToggleActiveAsync(usuario.Id);
+        if (ok)
+        {
+            usuario.IsActive = !usuario.IsActive;
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add("No se pudo cambiar el estado.", Severity.Error);
+        }
+    }
+}
