@@ -1,7 +1,6 @@
 @page "/usuarios"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Administrador")]
-
 @using Microsoft.AspNetCore.Authorization
 
 @inject IUsuarioService UsuarioService
@@ -11,7 +10,7 @@
 <PageTitle>Usuarios</PageTitle>
 
 <AuthorizeView Roles="Administrador">
-    <Authorized>
+    <Authorized Context="authContext">
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
             <MudText Typo="Typo.h5">Gestión de Usuarios</MudText>
             <MudSpacer />
