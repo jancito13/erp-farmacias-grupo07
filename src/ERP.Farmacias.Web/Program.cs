@@ -82,7 +82,11 @@ builder.Services.AddMudServices();
 
 // ── Blazor Server ─────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        if (builder.Environment.IsDevelopment())
+            options.DetailedErrors = true;
+    });
 builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 

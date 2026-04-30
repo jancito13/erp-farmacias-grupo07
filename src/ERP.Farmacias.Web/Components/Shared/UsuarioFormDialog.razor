@@ -1,0 +1,115 @@
+@using ERP.Farmacias.Application.DTOs.Security
+@using ERP.Farmacias.Application.Interfaces.Services.Security
+@inject IUsuarioService UsuarioService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(EditandoId is null ? "Nuevo usuario" : "Editar usuario")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_form.FullName"
+                      Label="Nombre completo"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      Required="true" />
+        <MudTextField @bind-Value="_form.Email"
+                      Label="Email"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      InputType="InputType.Email"
+                      Required="true" />
+        <MudTextField @bind-Value="_form.Password"
+                      Label="Contraseña"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      InputType="InputType.Password"
+                      Required="@(EditandoId is null)"
+                      HelperText="@(EditandoId is not null ? "Dejar vacío para no cambiar" : null)" />
+        <MudSelect T="string" @bind-Value="_form.RoleName"
+                   Label="Rol"
+                   Variant="Variant.Outlined"
+                   Required="true">
+            @foreach (var rol in Roles)
+            {
+                <MudSelectItem T="string" Value="@rol">@rol</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar" Disabled="_guardando">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Guardar"
+                   Disabled="_guardando">
+            @(_guardando ? "Guardando..." : "Guardar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? EditandoId { get; set; }
+    [Parameter] public CrearUsuarioDto Form { get; set; } = new();
+    [Parameter] public List<string> Roles { get; set; } = [];
+
+    private CrearUsuarioDto _form = new();
+    private bool _guardando;
+
+    protected override void OnParametersSet()
+    {
+        _form = new CrearUsuarioDto
+        {
+            FullName = Form.FullName,
+            Email = Form.Email,
+            RoleName = Form.RoleName,
+            Password = Form.Password
+        };
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+
+    private async Task Guardar()
+    {
+        _guardando = true;
+        try
+        {
+            bool ok;
+            if (EditandoId is not null)
+            {
+                ok = await UsuarioService.UpdateAsync(EditandoId, _form);
+                if (ok && !string.IsNullOrWhiteSpace(_form.RoleName))
+                    await UsuarioService.AssignRoleAsync(new AsignarRolDto
+                    {
+                        UserId = EditandoId,
+                        RoleName = _form.RoleName
+                    });
+            }
+            else
+            {
+                ok = await UsuarioService.CreateAsync(_form);
+            }
+
+            if (ok)
+            {
+                Snackbar.Add(EditandoId is not null ? "Usuario actualizado." : "Usuario creado.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("No se pudo guardar el usuario.", Severity.Error);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}
