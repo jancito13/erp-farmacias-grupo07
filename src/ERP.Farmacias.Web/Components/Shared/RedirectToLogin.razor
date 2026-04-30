@@ -1,0 +1,23 @@
+@inject NavigationManager Navigation
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+
+        if (auth.User.Identity?.IsAuthenticated == true)
+        {
+            // Autenticado pero sin autorización → página de acceso denegado
+            Navigation.NavigateTo("/acceso-denegado");
+        }
+        else
+        {
+            // No autenticado → redirigir al login con returnUrl
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/login?returnUrl={returnUrl}", forceLoad: true);
+        }
+    }
+}

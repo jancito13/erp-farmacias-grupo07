@@ -1,0 +1,354 @@
+@page "/auditoria"
+@attribute [Authorize(Roles = "Administrador")]
+@using Microsoft.AspNetCore.Authorization
+@using ERP.Farmacias.Application.DTOs.Security
+@using ERP.Farmacias.Application.Interfaces.Services.Security
+@using ERP.Farmacias.Domain.Enums
+
+@inject IAuditoriaService AuditoriaService
+
+<PageTitle>Log de Auditoría — ERP Farmacias</PageTitle>
+
+<AuthorizeView Roles="Administrador">
+    <Authorized Context="_authCtx">
+
+        @* ── Encabezado ───────────────────────────────────────────── *@
+        <MudPaper Class="mb-5 pa-5 rounded-lg"
+                  Style="background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); color: white;"
+                  Elevation="4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudAvatar Style="background: rgba(255,255,255,0.15); width: 56px; height: 56px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Security" Style="color: white; font-size: 2rem;" />
+                </MudAvatar>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h5" Style="color: white; font-weight: 700; letter-spacing: 0.5px;">
+                        Log de Auditoría
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.75);">
+                        Registro completo de accesos y acciones del sistema
+                    </MudText>
+                </MudStack>
+                <MudSpacer />
+                <MudChip T="string"
+                         Icon="@Icons.Material.Filled.Shield"
+                         Style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);"
+                         Size="Size.Small">
+                    Solo Administrador
+                </MudChip>
+            </MudStack>
+        </MudPaper>
+
+        @* ── Panel de filtros ─────────────────────────────────────── *@
+        <MudCard Class="mb-4 rounded-lg" Elevation="2">
+            <MudCardContent Class="pb-0">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Color="Color.Primary" />
+                    <MudText Typo="Typo.subtitle1" Color="Color.Primary" Style="font-weight: 600;">
+                        Filtros de búsqueda
+                    </MudText>
+                </MudStack>
+                <MudDivider Class="mb-4" />
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudDateRangePicker @bind-DateRange="_rangoFechas"
+                                            Label="Rango de fechas"
+                                            Variant="Variant.Outlined"
+                                            Clearable="true"
+                                            DateFormat="dd/MM/yyyy"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.DateRange"
+                                            AdornmentColor="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudSelect T="string"
+                                   @bind-Value="_filtroUsuarioId"
+                                   Label="Filtrar por usuario"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Person"
+                                   AdornmentColor="Color.Primary">
+                            @foreach (var (id, email) in _usuarios)
+                            {
+                                <MudSelectItem Value="@id">@email</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudSelect T="string"
+                                   @bind-Value="_filtroAccion"
+                                   Label="Tipo de acción"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Bolt"
+                                   AdornmentColor="Color.Primary">
+                            @foreach (var accion in Enum.GetValues<ActionType>())
+                            {
+                                <MudSelectItem Value="@accion.ToString()">
+                                    @ObtenerEtiquetaAccion(accion.ToString())
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions Class="px-4 pb-4 pt-2">
+                <MudSpacer />
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           StartIcon="@Icons.Material.Filled.ClearAll"
+                           OnClick="LimpiarFiltros"
+                           Class="mr-2">
+                    Limpiar filtros
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="AplicarFiltros">
+                    Buscar
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+
+        @* ── Grilla con paginación server-side ────────────────────── *@
+        <MudCard Elevation="2" Class="rounded-lg">
+            <MudCardContent Class="pa-0">
+                <MudDataGrid T="AuditLogResponseDto"
+                             ServerData="@CargarDatosServidor"
+                             @ref="_grid"
+                             Striped="true"
+                             Hover="true"
+                             Dense="false"
+                             RowsPerPage="20"
+                             Elevation="0"
+                             Style="border-radius: 8px; overflow: hidden;">
+                    <Columns>
+
+                        <TemplateColumn Title="Usuario" Sortable="false">
+                            <CellTemplate Context="row">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudAvatar Size="Size.Small"
+                                               Color="Color.Primary"
+                                               Style="font-size: 0.7rem; width: 30px; height: 30px;">
+                                        @(row.Item.UserEmail.Length > 0
+                                            ? row.Item.UserEmail[0].ToString().ToUpper()
+                                            : "?")
+                                    </MudAvatar>
+                                    <MudText Typo="Typo.body2">@row.Item.UserEmail</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Acción" Sortable="false">
+                            <CellTemplate Context="row">
+                                <MudChip T="string"
+                                         Color="@ObtenerColorAccion(row.Item.Action)"
+                                         Size="Size.Small"
+                                         Variant="Variant.Filled"
+                                         Icon="@ObtenerIconoAccion(row.Item.Action)"
+                                         Style="font-size: 0.75rem;">
+                                    @ObtenerEtiquetaAccion(row.Item.Action)
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Módulo" Sortable="false">
+                            <CellTemplate Context="row">
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Variant="Variant.Outlined"
+                                         Color="Color.Default">
+                                    @row.Item.Module
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Detalle" Sortable="false">
+                            <CellTemplate Context="row">
+                                @if (!string.IsNullOrEmpty(row.Item.Details))
+                                {
+                                    <MudTooltip Text="@row.Item.Details" Placement="Placement.Top">
+                                        <MudText Typo="Typo.body2"
+                                                 Style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default;">
+                                            @row.Item.Details
+                                        </MudText>
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-disabled);">—</MudText>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Dirección IP" Sortable="false">
+                            <CellTemplate Context="row">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@Icons.Material.Filled.Router"
+                                             Size="Size.Small"
+                                             Style="color: var(--mud-palette-text-secondary); font-size: 0.9rem;" />
+                                    <MudText Typo="Typo.caption" Style="font-family: monospace;">
+                                        @row.Item.IpAddress
+                                    </MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Fecha y Hora" Sortable="false">
+                            <CellTemplate Context="row">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2" Style="font-weight: 500;">
+                                        @row.Item.Timestamp.ToLocalTime().ToString("dd/MM/yyyy")
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                                        @row.Item.Timestamp.ToLocalTime().ToString("HH:mm:ss")
+                                    </MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                    </Columns>
+
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8" Spacing="3">
+                            <MudIcon Icon="@Icons.Material.Filled.SearchOff"
+                                     Style="font-size: 3.5rem; color: var(--mud-palette-text-disabled);" />
+                            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-secondary);">
+                                Sin registros de auditoría
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-disabled);">
+                                No se encontraron registros con los filtros aplicados.
+                            </MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+
+                    <LoadingContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                            <MudText Typo="Typo.body2">Cargando registros...</MudText>
+                        </MudStack>
+                    </LoadingContent>
+
+                    <PagerContent>
+                        <MudDataGridPager T="AuditLogResponseDto"
+                                          PageSizeOptions="new[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+
+    </Authorized>
+
+    <NotAuthorized>
+        <MudPaper Class="pa-8 ma-4 rounded-lg" Elevation="2">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Style="font-size: 4rem;" />
+                <MudText Typo="Typo.h5" Color="Color.Error">Acceso denegado</MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center">
+                    Solo los usuarios con rol <strong>Administrador</strong> pueden ver el log de auditoría.
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Href="/"
+                           StartIcon="@Icons.Material.Filled.Home">
+                    Volver al inicio
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private MudDataGrid<AuditLogResponseDto>? _grid;
+    private DateRange? _rangoFechas;
+    private string? _filtroUsuarioId;
+    private string? _filtroAccion;
+    private List<(string Id, string Email)> _usuarios = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _usuarios = await AuditoriaService.ObtenerUsuariosAsync();
+    }
+
+    private async Task<GridData<AuditLogResponseDto>> CargarDatosServidor(
+        GridState<AuditLogResponseDto> state, CancellationToken cancellationToken)
+    {
+        var filtro = new AuditFiltroDto
+        {
+            Pagina = state.Page + 1,
+            TamanoPagina = state.PageSize,
+            FechaDesde = _rangoFechas?.Start,
+            FechaHasta = _rangoFechas?.End,
+            UserId = _filtroUsuarioId,
+            Accion = _filtroAccion
+        };
+        var (items, total) = await AuditoriaService.ObtenerPagedAsync(filtro);
+        return new GridData<AuditLogResponseDto> { Items = items, TotalItems = total };
+    }
+
+    private async Task AplicarFiltros()
+    {
+        if (_grid is not null)
+            await _grid.ReloadServerData();
+    }
+
+    private async Task LimpiarFiltros()
+    {
+        _rangoFechas = null;
+        _filtroUsuarioId = null;
+        _filtroAccion = null;
+        if (_grid is not null)
+            await _grid.ReloadServerData();
+    }
+
+    private static Color ObtenerColorAccion(string action) => action switch
+    {
+        "Login"           => Color.Success,
+        "Logout"          => Color.Default,
+        "LoginFailed"     => Color.Error,
+        "Crear"           => Color.Info,
+        "Editar"          => Color.Warning,
+        "Eliminar"        => Color.Error,
+        "VerReporte"      => Color.Tertiary,
+        "UserCreated"     => Color.Info,
+        "UserUpdated"     => Color.Warning,
+        "UserDeactivated" => Color.Warning,
+        "RoleAssigned"    => Color.Secondary,
+        _                 => Color.Default
+    };
+
+    private static string ObtenerIconoAccion(string action) => action switch
+    {
+        "Login"           => Icons.Material.Filled.Login,
+        "Logout"          => Icons.Material.Filled.Logout,
+        "LoginFailed"     => Icons.Material.Filled.LockPerson,
+        "Crear"           => Icons.Material.Filled.AddCircle,
+        "Editar"          => Icons.Material.Filled.Edit,
+        "Eliminar"        => Icons.Material.Filled.Delete,
+        "VerReporte"      => Icons.Material.Filled.Assessment,
+        "UserCreated"     => Icons.Material.Filled.PersonAdd,
+        "UserUpdated"     => Icons.Material.Filled.ManageAccounts,
+        "UserDeactivated" => Icons.Material.Filled.PersonOff,
+        "RoleAssigned"    => Icons.Material.Filled.AdminPanelSettings,
+        _                 => Icons.Material.Filled.Circle
+    };
+
+    private static string ObtenerEtiquetaAccion(string action) => action switch
+    {
+        "Login"           => "Inicio sesión",
+        "Logout"          => "Cierre sesión",
+        "LoginFailed"     => "Login fallido",
+        "Crear"           => "Crear",
+        "Editar"          => "Editar",
+        "Eliminar"        => "Eliminar",
+        "VerReporte"      => "Ver reporte",
+        "UserCreated"     => "Usuario creado",
+        "UserUpdated"     => "Usuario actualizado",
+        "UserDeactivated" => "Usuario desactivado",
+        "RoleAssigned"    => "Rol asignado",
+        _                 => action
+    };
+}

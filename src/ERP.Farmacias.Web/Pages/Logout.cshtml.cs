@@ -1,15 +1,14 @@
-using ERP.Farmacias.Domain.Entities.Security;
-using Microsoft.AspNetCore.Identity;
+using ERP.Farmacias.Application.Interfaces.Services.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ERP.Farmacias.Web.Pages;
 
-public class LogoutModel(SignInManager<ApplicationUser> signInManager) : PageModel
+public class LogoutModel(IAuthService authService) : PageModel
 {
     public async Task<IActionResult> OnGetAsync()
     {
-        await signInManager.SignOutAsync();
+        await authService.LogoutAsync();
         return Redirect("/login");
     }
 }

@@ -2,11 +2,13 @@ using ERP.Farmacias.Application.Interfaces.Services.Security;
 using ERP.Farmacias.Application.Services.Security;
 using ERP.Farmacias.Domain.Entities.Security;
 using ERP.Farmacias.Infrastructure.Data;
+using ERP.Farmacias.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
 using ERP.Farmacias.Web.Components;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,13 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+// ── Antiforgery Cookie ────────────────────────────────────────────
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
 // ── Autenticación por Cookie ──────────────────────────────────────
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -46,6 +55,27 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/acceso-denegado";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
+// ── Políticas de autorización por rol ─────────────────────────────
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdministrador",
+        p => p.RequireRole("Administrador"));
+    options.AddPolicy("RequireCajero",
+        p => p.RequireRole("Cajero", "Administrador", "Gerente"));
+    options.AddPolicy("RequireContabilidad",
+        p => p.RequireRole("Contador", "Administrador", "Gerente"));
+    options.AddPolicy("RequireAlmacen",
+        p => p.RequireRole("Almacenero", "Administrador", "Gerente"));
+    options.AddPolicy("RequireCompras",
+        p => p.RequireRole("JefeCompras", "Administrador", "Gerente"));
+    options.AddPolicy("RequireRRHH",
+        p => p.RequireRole("RRHH", "Administrador", "Gerente"));
+    options.AddPolicy("RequireGerencia",
+        p => p.RequireRole("Gerente", "Administrador"));
 });
 
 // ── MudBlazor ─────────────────────────────────────────────────────
@@ -53,13 +83,18 @@ builder.Services.AddMudServices();
 
 // ── Blazor Server ─────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        if (builder.Environment.IsDevelopment())
+            options.DetailedErrors = true;
+    });
 builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
 // ── Servicios de Application (registrar aquí por módulo) ──────────
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-// builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
@@ -72,9 +107,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 if (!app.Environment.IsDevelopment())
+{
     app.UseExceptionHandler("/Error");
-
-app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
